@@ -37,14 +37,16 @@ jobs:
         with:
           name: local-${{ needs.build.outputs.snap }}
 
-      - name: Install snap & invoke parca
+      - name: Install snap & invoke parca-agent
         run: |
           sudo snap install --dangerous ${{ needs.build.outputs.snap }}
-          parca --version
+          parca-agent --help
 
       - name: Start Parca Agent and ensure API is up
         run: |
-          sudo snap start parca
+          sudo snap connect parca-agent:system-trace
+          sudo snap connect parca-agent:system-observe
+          sudo snap start parca-agent
           # Set some options to allow retries while Parca comes back up
           CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
           curl ${CURL_OPTS[@]} http://localhost:7071/

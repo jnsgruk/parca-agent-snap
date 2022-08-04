@@ -47,7 +47,6 @@ parts:
       - rustup/latest/stable
     source: https://github.com/parca-dev/parca-agent
     source-type: git
-    # source-commit: 5a8dea4577eeb15c7cf8795ad11ecf8dfff2174d
     override-build: |
       # Set the version of Parca for the build, and the snap
       export GORELEASER_CURRENT_TAG="$(git describe --match 'v*' --tags)" 

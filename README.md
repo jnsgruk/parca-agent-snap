@@ -47,6 +47,6 @@ There are a small number of config options:
 | `http-address`  | Any string                       | `:7071`          | Address for HTTP server to bind to                                      |
 | `store-address` | Any string                       | `localhost:7071` | gRPC address to send profiles and symbols to.                           |
 | `insecure`      | `true`, `false`                  | `false`          | Send gRPC requests via plaintext instead of TLS.                        |
-| `kubernetes`    | `true`, `false`                  | `true`           | Discover containers running on this node and profile them automatically |
+| `kubernetes`    | `true`, `false`                  | `false`          | Discover containers running on this node and profile them automatically |
 
 Config options can be set with `sudo snap set parca-agent <option>=<value>`

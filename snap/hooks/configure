@@ -7,7 +7,7 @@ SNAP=$(echo $SNAP | sed -e "s|/var/lib/snapd||g")
 # Discover containers running on this node to profile automatically.
 kubernetes="$(snapctl get kubernetes)"
 if [[ -z "$kubernetes" ]]; then
-    snapctl set kubernetes=true
+    snapctl set kubernetes=false
 fi
 
 log_level="$(snapctl get log-level)"
@@ -30,7 +30,7 @@ fi
 # gRPC address to send profiles and symbols to.
 store="$(snapctl get store-address)"
 if [[ -z "$store" ]]; then
-    snapctl set store-address=localhost:7070
+    snapctl set store-address="localhost:7070"
 fi
 
 # Send gRPC requests via plaintext instead of TLS

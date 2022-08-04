@@ -15,9 +15,9 @@ insecure="$(snapctl get insecure)"
 opts=(
     "--node=${node}" 
     "--log-level=${log_level}" 
-    "--http-address=:${port}" 
+    "--http-address=${http_address}" 
     "--kubernetes=${kubernetes}" 
-    "--store-address=${store_address}" 
+    "--store-address=${store}" 
     "--insecure=${insecure}" 
 )
 
