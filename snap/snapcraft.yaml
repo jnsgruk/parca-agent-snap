@@ -5,14 +5,10 @@ description: |
   Parca Agent is an always-on sampling profiler that uses eBPF to capture raw
   profiling data with very low overhead. It observes user-space and
   kernel-space stacktraces 100 times per second and builds pprof formatted
-  profiles from the extracted data. Read more details in the design
-  documentation.
+  profiles from the extracted data.
 
   The collected data can be viewed locally via HTTP endpoints and then be
   configured to be sent to a Parca server to be queried and analyzed over time.
-
-  Kubernetes metadata is added to the profiled processes by default but can be
-  disabled with --kubernetes=false.
 license: Apache-2.0
 contact: jon.seager@canonical.com
 issues: https://github.com/jnsgruk/parca-agent-snap/issues
