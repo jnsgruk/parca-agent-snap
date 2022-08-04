@@ -1,0 +1,102 @@
+name: parca-agent
+adopt-info: parca-agent
+summary: Parca Agent is an always-on sampling profiler that uses eBPF
+description: |
+  Parca Agent is an always-on sampling profiler that uses eBPF to capture raw
+  profiling data with very low overhead. It observes user-space and
+  kernel-space stacktraces 100 times per second and builds pprof formatted
+  profiles from the extracted data. Read more details in the design
+  documentation.
+
+  The collected data can be viewed locally via HTTP endpoints and then be
+  configured to be sent to a Parca server to be queried and analyzed over time.
+
+  Kubernetes metadata is added to the profiled processes by default but can be
+  disabled with --kubernetes=false.
+license: Apache-2.0
+contact: jon.seager@canonical.com
+issues: https://github.com/jnsgruk/parca-agent-snap/issues
+source-code: https://github.com/jnsgruk/parca-agent-snap
+website: https://parca.dev
+confinement: strict
+grade: stable
+base: core22
+compression: lzo
+
+architectures:
+  - build-on: amd64
+  # - build-on: arm64
+
+parts:
+  parca-agent:
+    plugin: nil
+    build-packages:
+      - build-essential
+      - clang
+      - zlib1g
+      - pkg-config
+      - libclang-14-dev
+      - llvm-14-dev
+      - libbpf-dev
+      - libelf-dev
+      - lld
+    build-snaps:
+      - go/1.18/stable
+      - jq/latest/stable
+      - goreleaser/latest/stable
+      - rustup/latest/stable
+    source: https://github.com/parca-dev/parca-agent
+    source-type: git
+    # source-commit: 5a8dea4577eeb15c7cf8795ad11ecf8dfff2174d
+    override-build: |
+      # Set the version of Parca for the build, and the snap
+      export GORELEASER_CURRENT_TAG="$(git describe --match 'v*' --tags)" 
+
+      # Set the version of the snap, stripping the leading 'v'
+      craftctl set version="${GORELEASER_CURRENT_TAG:1}"
+
+      # Install the right version of Rust
+      rustup show
+
+      # eBPF toolchain setup
+      make -C bpf setup
+
+      # Set some version info in the build
+      commit=$(git rev-parse HEAD)
+      commit_date=$(git show -s --format=%ci $commit)
+      export CGO_EXTLDFLAGS="-extldflags=-static -X main.version=${GORELEASER_CURRENT_TAG:1} -X main.commit=${commit} -X main.date=${commit_date}"
+
+      # Build the agent
+      make
+
+      # Copy into the install path so we can stage the binary
+      cp dist/parca-agent $CRAFT_PART_INSTALL/parca-agent
+    organize:
+      parca-agent: usr/bin/parca-agent
+    stage:
+      - usr/bin/parca-agent
+
+  local-parts:
+    plugin: dump
+    source: snap/local
+    source-type: local
+    after: [parca-agent]
+
+apps:
+  parca-agent:
+    command: usr/bin/parca-agent
+    plugs:
+      - network-bind
+      - network
+      - system-trace
+      - system-observe
+  parca-agent-svc:
+    command: bin/parca-agent-wrapper
+    daemon: simple
+    install-mode: disable
+    restart-condition: never
+    plugs:
+      - network-bind
+      - network
+      - system-trace
+      - system-observe

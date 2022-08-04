@@ -1,0 +1,13 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "snap/**"
+      - ".github/workflows/**.yaml"
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/build-and-test.yaml

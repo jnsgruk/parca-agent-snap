@@ -1,0 +1,59 @@
+name: Build/Test
+
+on:
+  workflow_call:
+    outputs:
+      snap:
+        description: "Filename of the built snap artifact"
+        value: local-${{ jobs.build.outputs.snap }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      snap: ${{ steps.snapcraft.outputs.snap }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build snap locally
+        uses: snapcore/action-build@v1
+        id: snapcraft
+        with:
+          snapcraft-channel: 7.x/candidate
+
+      - name: Upload locally built snap artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: local-${{ steps.snapcraft.outputs.snap }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Fetch built snap
+        uses: actions/download-artifact@v3
+        with:
+          name: local-${{ needs.build.outputs.snap }}
+
+      - name: Install snap & invoke parca
+        run: |
+          sudo snap install --dangerous ${{ needs.build.outputs.snap }}
+          parca --version
+
+      - name: Start Parca Agent and ensure API is up
+        run: |
+          sudo snap start parca
+          # Set some options to allow retries while Parca comes back up
+          CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+          curl ${CURL_OPTS[@]} http://localhost:7071/
+
+      # - name: Configure storage persistence
+      #   run: |
+      #     sudo snap set parca storage-persist=true
+      #     sudo snap restart parca
+      #     # Set some options to allow retries while Parca comes back up
+      #     CURL_OPTS=(--max-time 20 --retry 5 --retry-delay 3 --retry-connrefused)
+      #     curl ${CURL_OPTS[@]} http://localhost:7070/
+      #     curl ${CURL_OPTS[@]} http://localhost:7070/metrics

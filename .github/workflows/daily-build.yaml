@@ -1,0 +1,43 @@
+name: Auto Build
+on:
+  # Manual trigger
+  workflow_dispatch:
+  # Check regularly the upstream every six hours
+  schedule:
+    - cron: "0 0,6,12,18 * * *"
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-and-test.yaml
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Fetch built snap
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.build.outputs.snap }}
+
+      - name: Install Snapcraft
+        run: sudo snap install snapcraft --classic --channel=7.x/candidate
+
+      - name: Publish
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        run: |
+          # Get the current version of the snap
+          VERSION="$(ls *_amd64.snap | cut -d"_" -f2)"
+
+          # If the version conforms to a standard semantic version, release to edge & candidate.
+          # This means that '1.2.2' would release to edge & candidate, but '1.2.3-rc1' or
+          # '1.2.3-alpha20220606' would just release to edge.
+
+          if echo "$VERSION" | grep -qPo "[0-9]+\.[0-9]+\.[0-9]+$"; then
+            CHANNELS="edge,candidate"
+          else
+            CHANNELS="edge"
+          fi
+
+          # Upload the snaps and release to edge, candidate
+          snapcraft upload --release "$CHANNELS" *.snap
